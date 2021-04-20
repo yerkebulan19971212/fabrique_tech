@@ -1,4 +1,5 @@
 from django.contrib import admin
-from .models import Question, Poll
 
-admin.site.register([Question, Poll])
+from .models import Answer, Choice, PassedPoll, Poll, Question
+
+admin.site.register([Question, Poll, Answer, PassedPoll, Choice])

@@ -3,3 +3,5 @@ pytz==2021.1
 sqlparse==0.4.1
 djangorestframework
 django-debug-toolbar
+djangorestframework-simplejwt
+django-rest-swagger

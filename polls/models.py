@@ -22,7 +22,8 @@ class Question(models.Model):
         (MULTICHOICE, 'MULTICHOICE'),
     )
 
-    poll = models.ForeignKey(Poll, related_name="questions", on_delete=models.CASCADE)
+    poll = models.ForeignKey(Poll, related_name="questions",
+                             on_delete=models.CASCADE)
     text = models.CharField(max_length=256)
     type = models.CharField(
         max_length=11, choices=CHOICES, default=TEXT
@@ -40,3 +41,23 @@ class Choice(models.Model):
 
     def __str__(self):
         return " ".join([self.question.text, self.text])
+
+
+class PassedPoll(models.Model):
+    poll = models.ForeignKey(Poll, on_delete=models.CASCADE)
+    user_id = models.IntegerField()
+    anonymous = models.BooleanField(default=False)
+    created = models.DateTimeField(auto_now_add=True)
+
+
+class Answer(models.Model):
+    passed_poll = models.ForeignKey(PassedPoll, related_name='answers',
+                                    on_delete=models.CASCADE)
+    question = models.ForeignKey(Question, related_name='question',
+                                 on_delete=models.CASCADE)
+    choices = models.ManyToManyField(Choice, related_name='choices',
+                                     blank=True)
+    choice_text = models.CharField(max_length=200, null=True, blank=True)
+
+    def __str__(self):
+        return " ".join([self.question.text])

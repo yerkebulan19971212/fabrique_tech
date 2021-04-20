@@ -1,5 +1,6 @@
 from rest_framework import serializers
-from polls.models import Poll, Question, Choice
+
+from polls.models import Answer, Choice, PassedPoll, Poll, Question
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
@@ -7,7 +8,6 @@ class ChoiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Choice
         fields = ('id', 'text')
-        read_only_fields = ('id', )
 
 
 class QuestionSerializer(serializers.ModelSerializer):
@@ -51,7 +51,10 @@ class PollSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Poll
-        fields = ('pk', 'title', 'start_date', 'end_date', 'description', 'questions')
+        fields = (
+            'pk', 'title', 'start_date', 'end_date', 'description',
+            'questions'
+        )
         read_only_fields = ('pk', )
 
     def validate_start_date(self, value):
@@ -66,3 +69,50 @@ class PollSerializer(serializers.ModelSerializer):
 
         return value
 
+
+class AnswerSerializer(serializers.ModelSerializer):
+
+    class Meta:
+        model = Answer
+        fields = ('id', 'question', 'choices', 'choice_text')
+
+
+class PassedPollSerializer(serializers.ModelSerializer):
+    answers = AnswerSerializer(many=True)
+
+    class Meta:
+        model = PassedPoll
+        fields = ('id', 'poll', 'user_id', 'anonymous', 'created', 'answers')
+        read_only_fields = ('id', 'user_id', 'created')
+
+    def create(self, validated_data):
+        answers = validated_data.pop('answers', [])
+        instance = self.Meta.model.objects.create(**validated_data, user_id=1)
+        for a in answers:
+            choice_text = a.get('choice_text', None)
+            answer = Answer.objects.create(
+                passed_poll=instance,
+                choice_text=choice_text,
+                question=a.get("question"),
+            )
+            choices = a.get('choices')
+            if choices:
+                answer.choices.add(*[c for c in choices])
+        return instance
+
+
+class ReadAnswerSerializer(serializers.ModelSerializer):
+    question = QuestionSerializer()
+    choices = ChoiceSerializer(many=True)
+
+    class Meta:
+        model = Answer
+        fields = ('id', 'question', 'choices', 'choice_text')
+
+
+class UserPassedPollSerializer(serializers.ModelSerializer):
+    answers = ReadAnswerSerializer(many=True)
+
+    class Meta:
+        model = PassedPoll
+        fields = ('id', 'poll',  'created', 'answers')
