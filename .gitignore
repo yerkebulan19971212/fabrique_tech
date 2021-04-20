@@ -77,3 +77,4 @@ staticfiles/
 .pytest_cache/
 
 ugly.*
+migrations/
