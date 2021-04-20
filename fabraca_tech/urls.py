@@ -17,10 +17,11 @@ import debug_toolbar
 from django.contrib import admin
 from django.urls import path, include
 from rest_framework.routers import DefaultRouter
-from polls.views import PollModelViewSet
+from polls.views import PollModelViewSet, QuestionModelViewSet
 
 router = DefaultRouter()
 router.register(r'polls', PollModelViewSet)
+router.register(r'questions', QuestionModelViewSet)
 
 urlpatterns = [
     path('api/v1/', include((router.urls, 'api_v1'), namespace='api_v1')),

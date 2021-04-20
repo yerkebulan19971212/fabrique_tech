@@ -3,9 +3,7 @@ from polls.models import Poll, Question, Choice
 
 
 class ChoiceSerializer(serializers.ModelSerializer):
-    """
-    Choice serializer.
-    """
+
     class Meta:
         model = Choice
         fields = ('id', 'text')
@@ -13,13 +11,39 @@ class ChoiceSerializer(serializers.ModelSerializer):
 
 
 class QuestionSerializer(serializers.ModelSerializer):
+    type = serializers.ChoiceField(
+        choices=Question.CHOICES, default=Question.TEXT
+    )
+    choices = ChoiceSerializer(many=True, required=False)
+
     class Meta:
         model = Question
-        fields = "__all__"
+        fields = ('id', 'poll', 'text', 'type', 'choices')
         read_only_fields = ('id',)
         extra_kwargs = {
             'poll': {'write_only': True}
         }
+
+    def create_choices(self, question, choices):
+        Choice.objects.bulk_create([
+            Choice(question=question, **d) for d in choices
+        ])
+
+    def create(self, validated_data):
+        choices = validated_data.pop('choices', [])
+        question = Question.objects.create(**validated_data)
+        self.create_choices(question, choices)
+        return question
+
+    def update(self, instance, validated_data):
+        choices = validated_data.pop('choices', [])
+        instance.choices.all().delete()
+        self.create_choices(instance, choices)
+        for key, value in validated_data.items():
+            setattr(instance, key, value)
+
+        instance.save()
+        return instance
 
 
 class PollSerializer(serializers.ModelSerializer):
